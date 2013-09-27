@@ -145,7 +145,7 @@ join(char **strs, int len, char *val) {
  */
 
 int
-main(int argc, const char **argv){
+main(int argc, const char **argv) {
   if (1 == argc) usage();
   int interval = DEFAULT_INTERVAL;
 
