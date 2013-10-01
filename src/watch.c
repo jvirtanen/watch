@@ -5,6 +5,7 @@
 // Copyright (c) 2011 TJ Holowaychuk <tj@vision-media.ca>
 //
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +43,18 @@ static int quiet = 0;
  */
 
 static int halt = 0;
+
+/*
+ * Command line options.
+ */
+
+static struct option longopts[] = {
+  { "quiet",    no_argument,       NULL, 'q' },
+  { "halt",     no_argument,       NULL, 'x' },
+  { "interval", required_argument, NULL, 'i' },
+  { "version",  no_argument,       NULL, 'v' },
+  { "help",     no_argument,       NULL, 'h' },
+};
 
 /*
  * Output command usage.
@@ -103,16 +116,6 @@ redirect_stdout(const char *path) {
 }
 
 /*
- * Check if `arg` is the given short-opt or long-opt.
- */
-
-int
-option(char *small, char *large, const char *arg) {
-  if (!strcmp(small, arg) || !strcmp(large, arg)) return 1;
-  return 0;
-}
-
-/*
  * Return the total string-length consumed by `strs`.
  */
 
@@ -145,76 +148,59 @@ join(char **strs, int len, char *val) {
  */
 
 int
-main(int argc, const char **argv) {
+main(int argc, char **argv) {
   if (1 == argc) usage();
   int interval = DEFAULT_INTERVAL;
 
-  int len = 0;
-  int interpret = 1;
-  char *args[ARGS_MAX] = {0};
+  int ch;
 
-  for (int i = 1; i < argc; ++i) {
-    const char *arg = argv[i];
-    if (!interpret) goto arg;
+  while ((ch = getopt_long(argc, argv, "hqxvi:", longopts, NULL)) != -1) {
+    switch (ch) {
 
     // -h, --help
-    if (option("-h", "--help", arg)) usage();
+    case 'h':
+      usage();
 
     // -q, --quiet
-    if (option("-q", "--quiet", arg)) {
+    case 'q':
       quiet = 1;
-      continue;
-    }
+      break;
 
     // -x, --halt
-    if (option("-x", "--halt", arg)) {
+    case 'x':
       halt = 1;
-      continue;
-    }
+      break;
 
     // -v, --version
-    if (option("-v", "--version", arg)) {
+    case 'v':
       printf("%s\n", VERSION);
       exit(1);
-    }
 
     // -i, --interval <n>
-    if (option("-i", "--interval", arg)) {
-      if (argc-1 == i) {
-        fprintf(stderr, "\n  --interval requires an argument\n\n");
-        exit(1);
-      }
-
-      // seconds or milliseconds
-      arg = argv[++i];
-      interval = milliseconds(arg)
-        ? atoi(arg)
-        : atoi(arg) * 1000;
-      continue;
-    }
+    case 'i':
+      interval = milliseconds(optarg)
+        ? atoi(optarg)
+        : atoi(optarg) * 1000;
+      break;
 
     // unknown option
-    if (arg[0] == '-') usage();
-
-    // cmd args
-    if (len == ARGS_MAX) {
-      fprintf(stderr, "number of arguments exceeded %d\n", len);
-      exit(1);
+    default:
+      usage();
     }
-
-  arg:
-    args[len++] = (char *) arg;
-    interpret = 0;
   }
 
+  // cmd args
+  argc -= optind;
+  argv += optind;
+
   // <cmd>
-  if (!len) {
+  if (!argc) {
     fprintf(stderr, "\n  <cmd> required\n\n");
     exit(1);
   }
 
   // cmd
-  char *val = join(args, len, " ");
+  char *val = join(argv, argc, " ");
   char *cmd[4] = { "sh", "-c", val, 0 };
 
   // exec loop
