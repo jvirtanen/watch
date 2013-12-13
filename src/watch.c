@@ -27,12 +27,6 @@
 #define DEFAULT_INTERVAL 1000
 
 /*
- * Max command args.
- */
-
-#define ARGS_MAX 128
-
-/*
  * Quiet mode.
  */
 
