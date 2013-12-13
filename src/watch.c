@@ -114,10 +114,11 @@ redirect_stdout(const char *path) {
  */
 
 int
-length(char **strs) {
+length(char **strs, int len) {
+  int i = 0;
   int n = 0;
-  char *str;
-  while ((str = *strs++)) n += strlen(str);
+  for (i = 0; i < len; i++)
+    n += strlen(strs[i]);
   return n + 1;
 }
 
@@ -128,7 +129,7 @@ length(char **strs) {
 char *
 join(char **strs, int len, char *val) {
   --len;
-  char *buf = calloc(1, length(strs) + len * strlen(val) + 1);
+  char *buf = calloc(1, length(strs, len) + len * strlen(val) + 1);
   char *str;
   while ((str = *strs++)) {
     strcat(buf, str);
